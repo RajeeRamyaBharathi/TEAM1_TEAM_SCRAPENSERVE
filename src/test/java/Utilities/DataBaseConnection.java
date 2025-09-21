@@ -64,37 +64,37 @@ public class DataBaseConnection {
 
         
 
-//    public static void insertRecipeData(RecipeUrlInfo recipe) {
-//        String sql = "INSERT INTO recipes("+
-//                 "recipe_name,"+
-//                 "ingredients, preparation_time, cooking_time, num_of_servings, "+
-//                 " recipe_description, preparation_method, nutrition_values, "+
-//                 "recipe_url) "+
-//                 "VALUES (?,?,?,?,?,?,?,?,?)"+
-//                 "ON CONFLICT (recipe_url) DO NOTHING";
+    public static void insertRecipeData(RecipeUrlInfo recipe) {
+        String sql = "INSERT INTO recipes("+
+                 "recipe_name,"+
+                 "ingredients, preparation_time, cooking_time, num_of_servings, "+
+                 " recipe_description, preparation_method, nutrition_values, "+
+                 "recipe_url) "+
+                 "VALUES (?,?,?,?,?,?,?,?,?)"+
+                 "ON CONFLICT (recipe_url) DO NOTHING";
           
 
-//        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-//            ps.setString(1, recipe.getRecipeName());
-//            ps.setString(2, recipe.getIngredients());
-//            ps.setString(3, recipe.getPreparationTime());
-//            ps.setString(4, recipe.getCookingTime());
-//            ps.setString(5, recipe.getNumOfServings());
-//            ps.setString(6, recipe.getRecipeDescription());
-//            ps.setString(7, recipe.getPreparationMethod());
-//            ps.setString(8, recipe.getNutritionValues()); // plain text storage
-//            ps.setString(9, recipe.getRecipeUrl());
-//            int rows = ps.executeUpdate();
-//
-//            if (rows > 0) {
-//                LoggerLoad.info("Inserted recipe: " + recipe.getRecipeName());
-//            } else {
-//                LoggerLoad.warn("Recipe not inserted (duplicate URL?): " + recipe.getRecipeName());
-//            }
-//        } catch (SQLException e) {
-//            LoggerLoad.error("Error inserting recipe: " + recipe.getRecipeName() + " | " + e.getMessage());
-//        }
-//    }
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, recipe.getRecipeName());
+            ps.setString(2, recipe.getIngredients());
+            ps.setString(3, recipe.getPreparationTime());
+            ps.setString(4, recipe.getCookingTime());
+            ps.setString(5, recipe.getNumOfServings());
+            ps.setString(6, recipe.getRecipeDescription());
+            ps.setString(7, recipe.getPreparationMethod());
+            ps.setString(8, recipe.getNutritionValues()); // plain text storage
+            ps.setString(9, recipe.getRecipeUrl());
+            int rows = ps.executeUpdate();
+
+            if (rows > 0) {
+                LoggerLoad.info("Inserted recipe: " + recipe.getRecipeName());
+            } else {
+                LoggerLoad.warn("Recipe not inserted (duplicate URL?): " + recipe.getRecipeName());
+            }
+        } catch (SQLException e) {
+            LoggerLoad.error("Error inserting recipe: " + recipe.getRecipeName() + " | " + e.getMessage());
+        }
+    }
 
     // ==================================
     // INSERT INTO FILTER TABLES
