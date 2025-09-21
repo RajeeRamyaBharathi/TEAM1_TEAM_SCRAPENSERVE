@@ -1,34 +1,42 @@
 package Browser;
 
-import java.io.IOException;
 import java.time.Duration;
 
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.edge.EdgeDriver;
-import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.edge.EdgeOptions;
+import io.github.bonigarcia.wdm.WebDriverManager;
 
 public class BrowserFactory {
-	public static WebDriver driverinstance;
-	private static ThreadLocal<WebDriver> driver = new ThreadLocal<>();
+	 private static ThreadLocal<WebDriver> driver = new ThreadLocal<>();
 
-	public WebDriver browsersetup(String browsername) throws IOException {
-		if (browsername.equalsIgnoreCase("Chrome")) {
-			driver.set(new ChromeDriver());
-		} else if (browsername.equalsIgnoreCase("Edge")) {
-			driver.set(new EdgeDriver());
-		} else if (browsername.equalsIgnoreCase("Firefox")) {
-			driver.set(new FirefoxDriver());
-		}
+	    public static WebDriver createDriver(boolean headless) {
+	        WebDriverManager.chromedriver().setup();
+	        EdgeOptions options = new EdgeOptions();
+	        if (headless) 
+	        options.addArguments("--headless=new");
+	        options.addArguments("--disable-notifications");
+	        options.addArguments("--disable-gpu");
+	        options.addArguments("--window-size-1920,1080");
 
-		driverinstance = driver.get();
-		driverinstance.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
-		driverinstance.manage().window().maximize();
+	        driver.set(new EdgeDriver(options));
 
-		return driverinstance;
-	}
+	        WebDriver webDriver = driver.get();
+	        webDriver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
+	        webDriver.manage().window().maximize();
+	        return webDriver;
+	    }
 
-	public static WebDriver getdriverinstance() {
-		return driverinstance;
-	}
+	    public static WebDriver getDriver() {
+	        return driver.get();
+	    }
+
+	    public static void quitDriver() {
+	        if (driver.get() != null) {
+	            driver.get().quit();
+	            driver.remove();
+	        }
+	    }
 }
