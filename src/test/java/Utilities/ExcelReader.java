@@ -2,82 +2,101 @@ package Utilities;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.Iterator;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.poi.ss.usermodel.*;
 
 public class ExcelReader {
-	String [] [] ingredient = new String [100] [100];
-	String retreiveditem;
-	int i = 0,j=0;
 
-public String readExcelSheet(int rowvalue, int colvalue, String sheetname) throws IOException {
-	
-		String path = System.getProperty("user.dir")+"/src/test/resources/TestData/IngredientsAndComorbidities-ScrapperHackathon.xlsx";
-		File Excelfile = new File(path);
-		
-		FileInputStream Fis = new FileInputStream(Excelfile);
-		XSSFWorkbook workbook = new XSSFWorkbook(Fis);
-		XSSFSheet sheet = workbook.getSheet(sheetname);
-		
-		Iterator<Row> row = sheet.rowIterator();
-		
-		while(row.hasNext()) {
-			
-			Row currRow = row.next();
-			Iterator<Cell> cell = currRow.cellIterator();
-			
-			while(cell.hasNext()) {
-				Cell currCell = cell.next();
-				i=currCell.getRowIndex();
-				j=currCell.getColumnIndex();				
-				ingredient[i][j] = currCell.getStringCellValue();
-			}
-		}
-		workbook.close();
-		retreiveditem = ingredient[rowvalue][colvalue];
-		return retreiveditem;
-	}
-public int readlastrowindex(int rowvalue, int colvalue, String sheetname) throws IOException {
-	
-	String path = System.getProperty("user.dir")+"/src/test/resources/TestData/IngredientsAndComorbidities-ScrapperHackathon.xlsx";
-	File Excelfile = new File(path);
-	
-	FileInputStream Fis = new FileInputStream(Excelfile);
-	XSSFWorkbook workbook = new XSSFWorkbook(Fis);
-	XSSFSheet sheet = workbook.getSheet(sheetname);
-	
-	Iterator<Row> row = sheet.rowIterator();
-	
-	while(row.hasNext()) {
-		
-		Row currRow = row.next();
-		Iterator<Cell> cell = currRow.cellIterator();
-		
-		while(cell.hasNext()) {
-			Cell currCell = cell.next();
-			i=currCell.getRowIndex();
-			j=currCell.getColumnIndex();				
-			ingredient[i][j] = currCell.getStringCellValue();
-		}
-	}
-	workbook.close();
-	while(ingredient[i][colvalue].length() ==0) {
-		i=i-1;
-	}
-	
-	return i;
+    private List<String> eliminate = new ArrayList<>();
+    private List<String> toAdd = new ArrayList<>();
+
+    /**
+     * Constructor reads elimination and addition terms from an Excel file.
+     *
+     * @param filePath     Path to the Excel file
+     * @param sheetIndex   Index of the sheet to read from
+     * @param eliminateCol Column index for eliminate terms
+     * @param addCol       Column index for add terms
+     */
+    public ExcelReader(String filePath, int sheetIndex, int eliminateCol, int addCol) {
+        try (FileInputStream fis = new FileInputStream(new File(filePath));
+             Workbook workbook = WorkbookFactory.create(fis)) {
+
+            Sheet sheet = workbook.getSheetAt(sheetIndex);
+            LoggerLoad.info("Reading Excel sheet: " + sheet.getSheetName());
+
+            for (Row row : sheet) {
+                if (row.getRowNum() == 0) continue; // Skip header row
+
+                String elim = getCellValue(row, eliminateCol);
+                String add = getCellValue(row, addCol);
+
+                if (!elim.isEmpty()) {
+                    eliminate.add(elim.toLowerCase());
+                    LoggerLoad.debug("Loaded eliminate term: " + elim);
+                }
+                if (!add.isEmpty()) {
+                    toAdd.add(add.toLowerCase());
+                    LoggerLoad.debug("Loaded add term: " + add);
+                }
+            }
+
+            LoggerLoad.info("Loaded eliminate: " + eliminate.size() + ", add: " + toAdd.size());
+
+        } catch (Exception e) {
+            LoggerLoad.error("Error reading Excel file: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private String getCellValue(Row row, int colIndex) {
+        Cell cell = row.getCell(colIndex);
+        return (cell == null) ? "" : cell.toString().trim().toLowerCase();
+    }
+
+    public List<String> getMatchedEliminate(String ingredients) {
+        return matchFromList(ingredients, eliminate);
+    }
+
+    public List<String> getMatchedAdd(String ingredients) {
+        return matchFromList(ingredients, toAdd);
+    }
+
+    /**
+     * Safely matches terms from the list against input text.
+     *
+     * @param text  The input text (e.g., ingredients)
+     * @param list  List of words to match
+     * @return List of matched terms
+     */
+    private List<String> matchFromList(String text, List<String> list) {
+        List<String> matches = new ArrayList<>();
+
+        if (text == null || text.trim().isEmpty()) {
+            LoggerLoad.warn("Input text is null or empty in matchFromList.");
+            return matches; // Return empty list if input is null or blank
+        }
+
+        text = text.toLowerCase();
+        LoggerLoad.debug("Normalized ingredient text for matching: " + text);
+        for (String item : list) {
+            String escaped = Pattern.quote(item);
+
+            // word boundary matching, allows plurals
+            Pattern p = Pattern.compile("\\b" + escaped + "s?\\b");
+            Matcher m = p.matcher(text);
+
+            if (m.find()) {
+                matches.add(item);
+                LoggerLoad.debug("Matched item: " + item);
+            }
+        }
+
+
+        return matches;
+    }
 }
-
-public String readexcelvalue(int rownumber,int columnnumber, String sheetname) throws IOException {	
-	String checkitem;
-	checkitem = readExcelSheet(rownumber, columnnumber, sheetname);
-	return checkitem;	
-}
-}
-
-
-
