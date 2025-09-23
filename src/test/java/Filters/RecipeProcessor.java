@@ -50,7 +50,7 @@ public class RecipeProcessor {
             LoggerLoad.info("Recipe inserted to LCHF Add: " + recipe.getRecipeName());
             inserted = true;
         } else {
-            DataBaseConnection.insertIntoFilterTable("lchf_eliminate", recipe); // fallback
+            DataBaseConnection.insertIntoFilterTable("lchf_eliminate", recipe); 
             LoggerLoad.info("Recipe inserted to LCHF Eliminate (no add match): " + recipe.getRecipeName());
             inserted = true;
         }
@@ -65,7 +65,7 @@ public class RecipeProcessor {
             DataBaseConnection.insertIntoFilterTable("lfv_add", recipe);
             LoggerLoad.info("Recipe inserted to LFV Add: " + recipe.getRecipeName());
         } else {
-            DataBaseConnection.insertIntoFilterTable("lfv_eliminate", recipe); // fallback
+            DataBaseConnection.insertIntoFilterTable("lfv_eliminate", recipe);
             LoggerLoad.info("Recipe inserted to LFV Eliminate (no add match): " + recipe.getRecipeName());
         }
 
@@ -80,7 +80,7 @@ public class RecipeProcessor {
             DataBaseConnection.insertIntoFilterTable("allergy_add", recipe);
             LoggerLoad.info("Recipe inserted to Allergy Add: " + recipe.getRecipeName());
         } else {
-            DataBaseConnection.insertIntoFilterTable("allergy_eliminate", recipe); // fallback
+            DataBaseConnection.insertIntoFilterTable("allergy_eliminate", recipe); 
             LoggerLoad.info("Recipe inserted to Allergy Eliminate (no add match): " + recipe.getRecipeName());
         }
 

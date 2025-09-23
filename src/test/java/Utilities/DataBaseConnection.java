@@ -11,7 +11,7 @@ public class DataBaseConnection {
     public void connect(String url, String user, String password) {
         try {
             conn = DriverManager.getConnection(url, user, password);
-            LoggerLoad.info("Database connected!");
+            LoggerLoad.info("Database connected");
         } catch (SQLException e) {
             LoggerLoad.error("Failed to connect: " + e.getMessage());
         }
@@ -107,8 +107,7 @@ public class DataBaseConnection {
                 LoggerLoad.warn("Duplicate skipped in " + tableName + ": " + recipe.getRecipeName());
             }
         } catch (Exception e) {
-            LoggerLoad.error("Error inserting into " + tableName +
-                    " for recipe: " + recipe.getRecipeName() + " | " + e.getMessage());
+            LoggerLoad.error("Error inserting into " + tableName + " for recipe: " + recipe.getRecipeName() + "  " + e.getMessage());
         }
     }
     // Disconnect DB
