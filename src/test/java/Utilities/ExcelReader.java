@@ -1,5 +1,7 @@
 package Utilities;
 
+//This class  reads different filter keywords (Eliminate, Add, Avoid, Process) from an Excel sheet using Apache POI. It stores them in lists, and later matches these keywords against recipe ingredients using regex to classify recipes
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.ArrayList;
@@ -13,39 +15,42 @@ public class ExcelReader {
 
     private List<String> eliminate = new ArrayList<>();
     private List<String> toAdd = new ArrayList<>();
-
-    /**
-     * Constructor reads elimination and addition terms from an Excel file.
-     *
-     * @param filePath     Path to the Excel file
-     * @param sheetIndex   Index of the sheet to read from
-     * @param eliminateCol Column index for eliminate terms
-     * @param addCol       Column index for add terms
-     */
+    private List<String> avoid = new ArrayList<>();
+    private List<String> process = new ArrayList<>();
+    //Constructor for Eliminate + Add only
     public ExcelReader(String filePath, int sheetIndex, int eliminateCol, int addCol) {
+        this(filePath, sheetIndex, eliminateCol, addCol, -1, -1); 
+    }
+    //supports eliminate, add, avoid, process
+    public ExcelReader(String filePath, int sheetIndex,int eliminateCol, int addCol, int avoidCol, int processCol) {
         try (FileInputStream fis = new FileInputStream(new File(filePath));
              Workbook workbook = WorkbookFactory.create(fis)) {
-
             Sheet sheet = workbook.getSheetAt(sheetIndex);
             LoggerLoad.info("Reading Excel sheet: " + sheet.getSheetName());
-
             for (Row row : sheet) {
-                if (row.getRowNum() == 0) continue; // Skip header row
-
-                String elim = getCellValue(row, eliminateCol);
-                String add = getCellValue(row, addCol);
-
-                if (!elim.isEmpty()) {
-                    eliminate.add(elim.toLowerCase());
-                    LoggerLoad.debug("Loaded eliminate term: " + elim);
+                if (row.getRowNum() == 0) continue; // skip header row
+                if (eliminateCol >= 0) {
+                    String elim = getCellValue(row, eliminateCol);
+                    if (!elim.isEmpty()) eliminate.add(elim.toLowerCase());
                 }
-                if (!add.isEmpty()) {
-                    toAdd.add(add.toLowerCase());
-                    LoggerLoad.debug("Loaded add term: " + add);
+                if (addCol >= 0) {
+                    String add = getCellValue(row, addCol);
+                    if (!add.isEmpty()) toAdd.add(add.toLowerCase());
+                }
+                if (avoidCol >= 0) {
+                    String av = getCellValue(row, avoidCol);
+                    if (!av.isEmpty()) avoid.add(av.toLowerCase());
+                }
+                if (processCol >= 0) {
+                    String pr = getCellValue(row, processCol);
+                    if (!pr.isEmpty()) process.add(pr.toLowerCase());
                 }
             }
 
-            LoggerLoad.info("Loaded eliminate: " + eliminate.size() + ", add: " + toAdd.size());
+            LoggerLoad.info("Loaded terms → eliminate: " + eliminate.size()
+                    + ", add: " + toAdd.size()
+                    + ", avoid: " + avoid.size()
+                    + ", process: " + process.size());
 
         } catch (Exception e) {
             LoggerLoad.error("Error reading Excel file: " + e.getMessage());
@@ -54,10 +59,11 @@ public class ExcelReader {
     }
 
     private String getCellValue(Row row, int colIndex) {
+        if (colIndex < 0) return "";
         Cell cell = row.getCell(colIndex);
         return (cell == null) ? "" : cell.toString().trim().toLowerCase();
     }
-
+    //Public getters
     public List<String> getMatchedEliminate(String ingredients) {
         return matchFromList(ingredients, eliminate);
     }
@@ -66,37 +72,29 @@ public class ExcelReader {
         return matchFromList(ingredients, toAdd);
     }
 
-    /**
-     * Safely matches terms from the list against input text.
-     *
-     * @param text  The input text (e.g., ingredients)
-     * @param list  List of words to match
-     * @return List of matched terms
-     */
+    public List<String> getMatchedAvoid(String ingredients) {
+        return matchFromList(ingredients, avoid);
+    }
+
+    public List<String> getMatchedProcess(String ingredients) {
+        return matchFromList(ingredients, process);
+    }
+    //Match helper
     private List<String> matchFromList(String text, List<String> list) {
         List<String> matches = new ArrayList<>();
-
         if (text == null || text.trim().isEmpty()) {
             LoggerLoad.warn("Input text is null or empty in matchFromList.");
-            return matches; // Return empty list if input is null or blank
+            return matches;
         }
-
         text = text.toLowerCase();
-        LoggerLoad.debug("Normalized ingredient text for matching: " + text);
         for (String item : list) {
             String escaped = Pattern.quote(item);
-
-            // word boundary matching, allows plurals
             Pattern p = Pattern.compile("\\b" + escaped + "s?\\b");
             Matcher m = p.matcher(text);
-
             if (m.find()) {
                 matches.add(item);
-                LoggerLoad.debug("Matched item: " + item);
             }
         }
-
-
         return matches;
     }
 }
