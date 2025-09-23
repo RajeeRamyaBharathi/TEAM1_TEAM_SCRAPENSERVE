@@ -1,13 +1,14 @@
 package Filters;
 
+//This class navigates to a recipe URL, extracts structured fields (name, description, times, servings, ingredients, steps, nutrition), then classifies the recipe using the RecipeFoodCategory helper. It uses explicit waits for critical elements, safe find wrappers for optional fields, logs the extraction, and returns a populated RecipeUrlInfo.”
+
 import RecipeData.RecipeUrlInfo;
 import Utilities.LoggerLoad;
-
+import Filters.RecipeFoodCategory;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -19,7 +20,8 @@ public class RecipeScrapper {
     private WebDriverWait wait;
 
     private static final Duration WAIT_TIMEOUT = Duration.ofSeconds(10);
-
+    //Classification helper
+    private final RecipeFoodCategory classifier = new RecipeFoodCategory();
     public RecipeScrapper(WebDriver driver) {
         this.driver = driver;
         this.wait = new WebDriverWait(driver, WAIT_TIMEOUT);
@@ -29,59 +31,48 @@ public class RecipeScrapper {
         RecipeUrlInfo recipe = new RecipeUrlInfo();
         try {
             driver.get(url);
-
-            // Recipe name
-            WebElement recipeNameElement = wait.until(
-                ExpectedConditions.visibilityOfElementLocated(
-                    By.xpath("//span[contains(text(),'Recipe')] | //p[contains(text(),'You are here')]/span[last()]")
-                )
-            );
-
+            //Recipe URL + ID
             recipe.setRecipeUrl(url);
-
-            // Extract Recipe ID from URL (last number before 'r')
             String recipeID = url.replaceAll(".*/(\\d+)r.*", "$1");
             recipe.setRecipeID(recipeID);
-
+            //Recipe name
+            WebElement recipeNameElement = wait.until(
+                ExpectedConditions.visibilityOfElementLocated(
+                    By.xpath("//p[contains(text(),'You are here')]/span[last()]")
+                )
+            );
             recipe.setRecipeName(getTextSafe(recipeNameElement, "Recipe Name"));
-
-            // Description
+            //Description
             WebElement descElem = safeFind("//div[@id='aboutrecipe']//p[1]");
             recipe.setRecipeDescription(getTextSafe(descElem, "Description"));
-
-            // Prep Time
+            //Prep Time
             WebElement prepElem = safeFind("//h6[contains(text(),'Preparation Time')]//strong");
             recipe.setPreparationTime(getTextSafe(prepElem, "Prep Time"));
-
-            // Cooking Time
+            //Cooking Time
             WebElement cookElem = safeFind("//h6[contains(text(),'Cooking Time')]//strong");
             recipe.setCookingTime(getTextSafe(cookElem, "Cook Time"));
-
-            // Servings
+            //Servings
             WebElement serveElem = safeFind("//h6[contains(text(),'Makes')]//strong");
             recipe.setNumOfServings(getTextSafe(serveElem, "Servings"));
-
-            // Ingredients
+            //Ingredients
             List<WebElement> ingredientElems = driver.findElements(By.xpath("//div[@id='ingredients']"));
             StringBuilder ingredients = new StringBuilder();
             for (WebElement ing : ingredientElems) {
                 ingredients.append(ing.getText().trim()).append("\n");
             }
-            recipe.setIngredients(ingredients.length() > 0 ? ingredients.toString().trim() : "Not found");
-
-            // Preparation Method
-            List<WebElement> methodElems = driver.findElements(By.xpath("//div[@id='method'] | //div[@id='methods']"));
+            String ingredientText = ingredients.length() > 0 ? ingredients.toString().trim() : "Not found";
+            recipe.setIngredients(ingredientText);
+            //Preparation Method
+            List<WebElement> methodElems = driver.findElements(By.xpath("//div[@id='methods']"));
             StringBuilder method = new StringBuilder();
             for (WebElement step : methodElems) {
                 method.append(step.getText().trim()).append("\n");
             }
             recipe.setPreparationMethod(method.length() > 0 ? method.toString().trim() : "Not found");
-
-            // Nutrition table (structured + string)
+            //Nutrition table
             List<WebElement> rows = driver.findElements(By.xpath("//table[@id='rcpnutrients']//tr"));
             StringBuilder nutrition = new StringBuilder();
             Map<String, String> nutritionMap = new HashMap<>();
-
             for (WebElement row : rows) {
                 List<WebElement> cols = row.findElements(By.tagName("td"));
                 if (cols.size() >= 2) {
@@ -100,20 +91,21 @@ public class RecipeScrapper {
                     }
                 }
             }
-
             recipe.setNutritionValues(nutrition.length() > 0 ? nutrition.toString().trim() : "Not found");
-           // recipe.setNutritionMap(nutritionMap);
-
+            //Classify food category, recipe category, etc.
+            recipe.setFoodCategory(classifier.getfoodcategory(ingredientText));
+            recipe.setRecipeCategory(classifier.getrecipecategory(recipe.getRecipeName()));
+             recipe.setCuisineCategory(classifier.getCuisine(recipe.getRecipeName(), ingredientText));
+             recipe.setSubCategory(classifier.getSubCategory(recipe.getRecipeName()));
+             recipe.setFoodProcessing(classifier.getFoodProcessing(recipe.getPreparationMethod()));
+             recipe.setFoodProcessingToAvoid(classifier.getFoodProcessingToAvoid(recipe.getPreparationMethod()));
             LoggerLoad.info("Finished scraping: " + recipe.getRecipeName());
         } catch (Exception e) {
-            LoggerLoad.error("Failed to scrape recipe from URL: " + url + " | " + e.getMessage());
+            LoggerLoad.error("Failed to scrape recipe from URL: " + url + "  " + e.getMessage());
         }
         return recipe;
     }
-
-    /**
-     * Utility to get safe element text with logging
-     */
+    //Get safe element text 
     private String getTextSafe(WebElement element, String fieldName) {
         try {
             if (element == null) return "Not found";
@@ -122,14 +114,11 @@ public class RecipeScrapper {
             LoggerLoad.info(fieldName + " => " + text);
             return text.isEmpty() ? "Not found" : text;
         } catch (Exception e) {
-            LoggerLoad.warn("Could not find field: " + fieldName + " | " + e.getMessage());
+            LoggerLoad.warn("Could not find field: " + fieldName + "  " + e.getMessage());
             return "Not found";
         }
     }
-
-    /**
-     * Utility to safely locate element (returns null if not found)
-     */
+    //Safe find
     private WebElement safeFind(String xpath) {
         try {
             return driver.findElement(By.xpath(xpath));
