@@ -50,7 +50,7 @@ public class RecipeScrappingTest {
                 //Scrape recipe details
                 RecipeUrlInfo recipe = scraper.scrapeRecipe(url);
                 recipe.setRecipeID("R" + recipeId++);
-                //Process recipe → classify into one of 6 tables
+                //Process recipe = classify into one of 6 tables
                 processor.processRecipe(recipe);
                 //Log classification info
                 LoggerLoad.info("==== Recipe Classification ====");

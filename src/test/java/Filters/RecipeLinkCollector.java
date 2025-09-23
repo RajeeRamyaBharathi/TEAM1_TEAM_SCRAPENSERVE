@@ -21,7 +21,7 @@ public class RecipeLinkCollector {
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
             } catch (Exception e) {
-                LoggerLoad.error("Error loading category page: " + url + " | " + e.getMessage());
+                LoggerLoad.error("Error loading category page: " + url + "  " + e.getMessage());
                 continue;
             }
             List<WebElement> links = driver.findElements(By.xpath(".//h5/a"));

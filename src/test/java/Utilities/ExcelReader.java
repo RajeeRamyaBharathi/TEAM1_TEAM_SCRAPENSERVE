@@ -28,7 +28,7 @@ public class ExcelReader {
             Sheet sheet = workbook.getSheetAt(sheetIndex);
             LoggerLoad.info("Reading Excel sheet: " + sheet.getSheetName());
             for (Row row : sheet) {
-                if (row.getRowNum() == 0) continue; // skip header row
+                if (row.getRowNum() == 0) continue; 
                 if (eliminateCol >= 0) {
                     String elim = getCellValue(row, eliminateCol);
                     if (!elim.isEmpty()) eliminate.add(elim.toLowerCase());
