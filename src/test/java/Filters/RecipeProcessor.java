@@ -32,8 +32,8 @@ public class RecipeProcessor {
         //Classification 
         recipe.setFoodCategory(categoryHelper.getfoodcategory(ingredients));
         recipe.setRecipeCategory(categoryHelper.getrecipecategory(recipeName));
-        recipe.setCuisineCategory("Indian"); // Example default (extend later)
-        recipe.setSubCategory("General");    // Extend based on mapping
+        recipe.setCuisineCategory("Indian"); 
+        recipe.setSubCategory("General");    
         recipe.setFoodProcessing("Raw/Steamed"); 
         recipe.setFoodProcessingToAvoid("Processed");
         boolean inserted = false;
